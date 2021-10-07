@@ -1,14 +1,19 @@
 import subprocess
 import sys
 
-"""
-"""
+import pandas as pd
 
+"""
+"""
 
 # VAR ------------------------------------------------------------------------ #
+LOGS_PATH = "data/logs.csv"
+
 
 # MAIN ----------------------------------------------------------------------- #
 def main() -> None:
+    df = pd.read_csv(LOGS_PATH)
+
     display_finish()
 
 
