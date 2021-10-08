@@ -1,6 +1,6 @@
 import subprocess
 import sys
-
+import arff
 import pandas as pd
 
 """
@@ -13,11 +13,19 @@ LOGS_PATH = "data/logs.csv"
 # MAIN ----------------------------------------------------------------------- #
 def main() -> None:
     df = pd.read_csv(LOGS_PATH)
-
+    df = filter_logs(df)
+    print(len(df))
     display_finish()
 
 
 # DEF ------------------------------------------------------------------------ #
+def filter_logs(df: pd.DataFrame) -> pd.DataFrame:
+    return df.loc[
+        (df["method"] == "GET")
+        & (df["response"] == 200)
+        & (~df['url'].str.contains('.jpg|.gif|.bmp|.xbm|.png|.jpeg'))
+        ]
+
 
 # UTIL ----------------------------------------------------------------------- #
 def check_types_check_style() -> None:
