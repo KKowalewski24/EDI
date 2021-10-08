@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 import arff
@@ -8,13 +9,17 @@ import pandas as pd
 
 # VAR ------------------------------------------------------------------------ #
 LOGS_PATH = "data/logs.csv"
+OUTPUT_DIR = "output/"
+POPULAR_SITE_PERCENT = 0.5
 
 
 # MAIN ----------------------------------------------------------------------- #
 def main() -> None:
-    df = pd.read_csv(LOGS_PATH)
-    df = filter_logs(df)
+    create_directory(OUTPUT_DIR)
+    df: pd.DataFrame = filter_logs(pd.read_csv(LOGS_PATH))
+    df.to_csv(OUTPUT_DIR + "out.csv")
     print(len(df))
+    print(df.head())
     display_finish()
 
 
@@ -23,8 +28,13 @@ def filter_logs(df: pd.DataFrame) -> pd.DataFrame:
     return df.loc[
         (df["method"] == "GET")
         & (df["response"] == 200)
-        & (~df['url'].str.contains('.jpg|.gif|.bmp|.xbm|.png|.jpeg'))
+        & (df['url'].str.contains('.jpg|.gif|.bmp|.xbm|.png|.jpeg') == False)
         ]
+
+
+def create_directory(path: str) -> None:
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 
 # UTIL ----------------------------------------------------------------------- #
