@@ -1,8 +1,11 @@
 import os
 import subprocess
 import sys
+from datetime import datetime
+
 import arff
 import pandas as pd
+from nameof import nameof
 
 """
 """
@@ -10,16 +13,21 @@ import pandas as pd
 # VAR ------------------------------------------------------------------------ #
 LOGS_PATH = "data/logs.csv"
 OUTPUT_DIR = "output/"
-POPULAR_SITE_PERCENT = 0.5
+CSV = "csv"
+ARFF = "arff"
+SECONDS_IN_MINUTE = 60
+FIXED_SESSION_DURATION = 10 * SECONDS_IN_MINUTE
+POPULAR_SITE_FRACTION = 0.5
 
 
 # MAIN ----------------------------------------------------------------------- #
 def main() -> None:
     create_directory(OUTPUT_DIR)
     df: pd.DataFrame = filter_logs(pd.read_csv(LOGS_PATH))
-    df.to_csv(OUTPUT_DIR + "out.csv")
-    print(len(df))
-    print(df.head())
+    # df.to_csv(OUTPUT_DIR + "out.csv")
+    # print(len(df))
+    # print(df.head())
+
     display_finish()
 
 
@@ -32,9 +40,22 @@ def filter_logs(df: pd.DataFrame) -> pd.DataFrame:
         ]
 
 
+def save_df_to_csv_and_arff(df: pd.DataFrame) -> None:
+    collection_name = nameof(df)
+    df.to_csv(get_filename(collection_name, CSV), index=False)
+    arff.dump(
+        get_filename(collection_name, ARFF), df.values,
+        relation=collection_name, names=df.columns
+    )
+
+
 def create_directory(path: str) -> None:
     if not os.path.exists(path):
         os.makedirs(path)
+
+
+def get_filename(name: str, extension: str) -> str:
+    return (name + "-" + datetime.now().strftime("%H%M%S") + extension).replace(" ", "")
 
 
 # UTIL ----------------------------------------------------------------------- #
