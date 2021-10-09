@@ -1,23 +1,24 @@
 import os
 import subprocess
 import sys
-from argparse import Namespace, ArgumentParser
-from datetime import datetime, timedelta
-from typing import Dict, Tuple
+from argparse import ArgumentParser, Namespace
+from datetime import datetime
 
 import arff
 import pandas as pd
-from nameof import nameof
-from tqdm import tqdm
 
 """
+    How to run:
+        Filter data:    python main.py -f
+        Group data:     python main.py -g
 """
 
 # VAR ------------------------------------------------------------------------ #
 LOGS_PATH = "data/logs.csv"
 OUTPUT_DIR = "output/"
-CSV = "csv"
-ARFF = "arff"
+FILTERED_LOGS = "filtered_logs"
+CSV = ".csv"
+ARFF = ".arff"
 SECONDS_IN_MINUTE = 60
 FIXED_SESSION_DURATION = 10 * SECONDS_IN_MINUTE
 POPULAR_SITE_FRACTION = 0.5
@@ -36,12 +37,13 @@ def main() -> None:
         df: pd.DataFrame = prepare_logs(
             filter_logs(pd.read_csv(LOGS_PATH, nrows=ROWS_NUMBER_TO_READ))
         )
-        df = df.reset_index()
-        save_df_to_csv_and_arff(df, "filtered_logs", add_date=False)
+        print("Saving processed data to files ...")
+        save_df_to_csv_and_arff(df, FILTERED_LOGS, add_date=False)
 
     if is_grouping_active:
         print("Preparing sessions and users ...")
-
+        df: pd.DataFrame = pd.read_csv(FILTERED_LOGS + CSV)
+        # TODO finish grouping
         print("Saving processed data to files ...")
         for data_frame, label in zip([], []):
             save_df_to_csv_and_arff(data_frame, label)
