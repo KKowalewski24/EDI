@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 from datetime import datetime
+from typing import Dict
 
 import arff
 import pandas as pd
@@ -24,9 +25,14 @@ POPULAR_SITE_FRACTION = 0.5
 def main() -> None:
     create_directory(OUTPUT_DIR)
     df: pd.DataFrame = filter_logs(pd.read_csv(LOGS_PATH))
-    # df.to_csv(OUTPUT_DIR + "out.csv")
-    # print(len(df))
-    # print(df.head())
+    unique_users: pd.DataFrame = df["host"].unique()
+    popular_sites: pd.DataFrame = get_popular_sites(df)
+
+    sessions = []
+    users = []
+
+    for data_frame in []:
+        save_df_to_csv_and_arff(data_frame)
 
     display_finish()
 
@@ -38,6 +44,20 @@ def filter_logs(df: pd.DataFrame) -> pd.DataFrame:
         & (df["response"] == 200)
         & (df['url'].str.contains('.jpg|.gif|.bmp|.xbm|.png|.jpeg') == False)
         ]
+
+
+def get_popular_sites(df: pd.DataFrame) -> pd.DataFrame:
+    sites_counts = df['url'].value_counts().rename('count')
+    sites_percents = (df['url'].value_counts(normalize=True) * 100).rename('percent')
+
+    sites = pd.concat([sites_counts, sites_percents], axis=1)
+    sites = sites.reset_index().rename({'index': 'url'}, axis=1)
+
+    return sites[sites['percent'] > POPULAR_SITE_FRACTION]
+
+
+def get_empty_popular_sites_dictionary(popular_sites: pd.DataFrame) -> Dict[str, bool]:
+    return {b: False for b in popular_sites['url']}
 
 
 def save_df_to_csv_and_arff(df: pd.DataFrame) -> None:
