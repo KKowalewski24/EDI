@@ -33,7 +33,10 @@ def main() -> None:
 
     if is_filtering_active:
         print("Preparing logs ...")
-        df: pd.DataFrame = filter_logs(pd.read_csv(LOGS_PATH, nrows=ROWS_NUMBER_TO_READ))
+        df: pd.DataFrame = prepare_logs(
+            filter_logs(pd.read_csv(LOGS_PATH, nrows=ROWS_NUMBER_TO_READ))
+        )
+        df = df.reset_index()
         save_df_to_csv_and_arff(df, "filtered_logs", add_date=False)
 
     if is_grouping_active:
@@ -69,7 +72,7 @@ def filter_logs(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_logs(df: pd.DataFrame) -> pd.DataFrame:
-    df['time'] = pd.to_datetime(df['time'])
+    df["time"] = pd.to_datetime(df["time"]).astype("str")
     return df
 
 
