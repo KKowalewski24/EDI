@@ -3,9 +3,11 @@ import subprocess
 import sys
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
+from typing import List, Tuple
 
 import arff
 import pandas as pd
+from tqdm import tqdm
 
 """
     How to run:
@@ -37,13 +39,13 @@ def main() -> None:
         df: pd.DataFrame = prepare_logs(
             filter_logs(pd.read_csv(LOGS_PATH, nrows=ROWS_NUMBER_TO_READ))
         )
-        print("Saving processed data to files ...")
+        print("Saving processed data to files, number of records" + str(len(df.index)) + " ...")
         save_df_to_csv_and_arff(df, FILTERED_LOGS, add_date=False)
 
     if is_grouping_active:
         print("Preparing sessions and users ...")
-        df: pd.DataFrame = pd.read_csv(FILTERED_LOGS + CSV)
-        # TODO finish grouping
+        df: pd.DataFrame = pd.read_csv(OUTPUT_DIR + FILTERED_LOGS + CSV)
+        extract_data(df)
         print("Saving processed data to files ...")
         for data_frame, label in zip([], []):
             save_df_to_csv_and_arff(data_frame, label)
@@ -78,6 +80,19 @@ def prepare_logs(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def extract_data(df: pd.DataFrame) -> Tuple[List, List]:
+    unique_users = df["host"].unique()
+    extracted_sessions: List = []
+    extracted_users: List = []
+
+    for user in tqdm(unique_users):
+        requests: pd.DataFrame = df[df["host"] == user]
+        for request in requests:
+            pass
+
+    return extracted_users, extracted_sessions
+
+
 def save_df_to_csv_and_arff(df: pd.DataFrame, collection_name: str, add_date: bool = True) -> None:
     df.to_csv(OUTPUT_DIR + get_filename(collection_name, CSV, add_date), index=False)
     arff.dump(
@@ -92,7 +107,7 @@ def create_directory(path: str) -> None:
 
 
 def get_filename(name: str, extension: str, add_date: bool = True) -> str:
-    return (name + "-" + (datetime.now().strftime("%H%M%S") if add_date else "")
+    return (name + ("-" + datetime.now().strftime("%H%M%S") if add_date else "")
             + extension).replace(" ", "")
 
 
