@@ -134,9 +134,13 @@ def modify_extracted_data(extracted_users: pd.DataFrame, extracted_sessions: pd.
         Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     session_additional_cols: List[str] = ["duration", "requests_count", "average_request_duration"]
 
-    user_pages: pd.DataFrame = extracted_users.drop(columns=["requests_count"])
-    sessions_pages: pd.DataFrame = extracted_sessions.drop(columns=session_additional_cols)
-    sessions_numeric: pd.DataFrame = extracted_sessions[session_additional_cols]
+    user_pages: pd.DataFrame = extracted_users.drop(columns=["requests_count"]).astype(object)
+    sessions_pages: pd.DataFrame = (
+        extracted_sessions
+            .drop(columns=session_additional_cols)
+            .astype(object)
+    )
+    sessions_numeric: pd.DataFrame = extracted_sessions[session_additional_cols].astype(object)
 
     return extracted_users, extracted_sessions, user_pages, sessions_pages, sessions_numeric
 
