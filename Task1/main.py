@@ -3,7 +3,7 @@ import subprocess
 import sys
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import arff
 import pandas as pd
@@ -16,15 +16,15 @@ from tqdm import tqdm
 """
 
 # VAR ------------------------------------------------------------------------ #
-LOGS_PATH = "data/logs.csv"
-OUTPUT_DIR = "output/"
-FILTERED_LOGS = "filtered_logs"
-CSV = ".csv"
-ARFF = ".arff"
-SECONDS_IN_MINUTE = 60
-FIXED_SESSION_DURATION = 10 * SECONDS_IN_MINUTE
-POPULAR_SITE_FRACTION = 0.5
-ROWS_NUMBER_TO_READ = 50000
+LOGS_PATH: str = "data/logs.csv"
+OUTPUT_DIR: str = "output/"
+FILTERED_LOGS: str = "filtered_logs"
+CSV: str = ".csv"
+ARFF: str = ".arff"
+SECONDS_IN_MINUTE: int = 60
+FIXED_SESSION_DURATION: int = 10 * SECONDS_IN_MINUTE
+POPULAR_SITE_PERCENT: float = 0.5
+ROWS_NUMBER_TO_READ: int = 50000
 
 
 # MAIN ----------------------------------------------------------------------- #
@@ -36,9 +36,7 @@ def main() -> None:
 
     if is_filtering_active:
         print("Preparing logs ...")
-        df: pd.DataFrame = prepare_logs(
-            filter_logs(pd.read_csv(LOGS_PATH, nrows=ROWS_NUMBER_TO_READ))
-        )
+        df: pd.DataFrame = filter_logs(pd.read_csv(LOGS_PATH, nrows=ROWS_NUMBER_TO_READ))
         print("Saving processed data to files, number of records" + str(len(df.index)) + " ...")
         save_df_to_csv_and_arff(df, FILTERED_LOGS, add_date=False)
 
@@ -54,6 +52,72 @@ def main() -> None:
 
 
 # DEF ------------------------------------------------------------------------ #
+def filter_logs(df: pd.DataFrame) -> pd.DataFrame:
+    return df.loc[
+        (df["method"] == "GET")
+        & (df["response"] == 200)
+        & (~df["url"].str.contains(".jpg|.gif|.bmp|.xbm|.png|.jpeg"))
+        ]
+
+
+def extract_data(df: pd.DataFrame) -> Tuple[List, List]:
+    extracted_sessions: List[Dict[str, str]] = []
+    extracted_users: List[Dict[str, str]] = []
+
+    unique_users: pd.Series = df["host"].unique()
+
+    sites_percents: pd.DataFrame = (
+        (df["url"].value_counts(normalize=True) * 100)
+            .rename("percent")
+            .reset_index()
+            .rename({'index': 'url'}, axis=1)
+    )
+
+    popular_sites: pd.DataFrame = sites_percents[sites_percents["percent"] > POPULAR_SITE_PERCENT]
+
+    for user in tqdm(unique_users):
+        requests: pd.DataFrame = df[df["host"] == user]
+
+        session_start = int(requests.iloc[0]["time"])
+        session_end = session_start
+        session_visited_sites: Dict[str, bool] = get_popular_sites_with_flag(popular_sites)
+        user_visited_sites: Dict[str, bool] = get_popular_sites_with_flag(popular_sites)
+        session_requests_count: int = 0
+        user_requests_count: int = 0
+
+        for index, request in requests.iterrows():
+            if request["time"] - session_end > FIXED_SESSION_DURATION:
+                if session_requests_count > 1:
+                    session_duration = (session_end - session_start)
+                    average_request_duration = session_duration / (session_requests_count - 1)
+
+                session_start = request["time"]
+                session_visited_sites = get_popular_sites_with_flag(popular_sites)
+                session_requests_count = 0
+
+            if request["url"] in session_visited_sites:
+                session_visited_sites[request["url"]] = True
+                user_visited_sites[request["url"]] = True
+
+            session_requests_count += 1
+            user_requests_count += 1
+            session_end = request["time"]
+
+    return extracted_users, extracted_sessions
+
+
+def get_popular_sites_with_flag(popular_sites: pd.DataFrame) -> Dict[str, bool]:
+    return {site: False for site in popular_sites["url"]}
+
+
+def save_df_to_csv_and_arff(df: pd.DataFrame, collection_name: str, add_date: bool = True) -> None:
+    df.to_csv(OUTPUT_DIR + get_filename(collection_name, CSV, add_date), index=False)
+    arff.dump(
+        OUTPUT_DIR + get_filename(collection_name, ARFF, add_date), df.values,
+        relation=collection_name, names=df.columns
+    )
+
+
 def prepare_args() -> Namespace:
     arg_parser = ArgumentParser()
 
@@ -67,40 +131,7 @@ def prepare_args() -> Namespace:
     return arg_parser.parse_args()
 
 
-def filter_logs(df: pd.DataFrame) -> pd.DataFrame:
-    return df.loc[
-        (df["method"] == "GET")
-        & (df["response"] == 200)
-        & (~df["url"].str.contains(".jpg|.gif|.bmp|.xbm|.png|.jpeg"))
-        ]
-
-
-def prepare_logs(df: pd.DataFrame) -> pd.DataFrame:
-    df["time"] = pd.to_datetime(df["time"]).astype("str")
-    return df
-
-
-def extract_data(df: pd.DataFrame) -> Tuple[List, List]:
-    unique_users = df["host"].unique()
-    extracted_sessions: List = []
-    extracted_users: List = []
-
-    for user in tqdm(unique_users):
-        requests: pd.DataFrame = df[df["host"] == user]
-        for request in requests:
-            pass
-
-    return extracted_users, extracted_sessions
-
-
-def save_df_to_csv_and_arff(df: pd.DataFrame, collection_name: str, add_date: bool = True) -> None:
-    df.to_csv(OUTPUT_DIR + get_filename(collection_name, CSV, add_date), index=False)
-    arff.dump(
-        OUTPUT_DIR + get_filename(collection_name, ARFF, add_date), df.values,
-        relation=collection_name, names=df.columns
-    )
-
-
+# UTIL ----------------------------------------------------------------------- #
 def create_directory(path: str) -> None:
     if not os.path.exists(path):
         os.makedirs(path)
@@ -111,7 +142,6 @@ def get_filename(name: str, extension: str, add_date: bool = True) -> str:
             + extension).replace(" ", "")
 
 
-# UTIL ----------------------------------------------------------------------- #
 def check_types_check_style() -> None:
     subprocess.call(["mypy", "."])
     subprocess.call(["flake8", "."])
