@@ -17,7 +17,8 @@ from tqdm import tqdm
 """
 
 # VAR ------------------------------------------------------------------------ #
-LOGS_PATH: str = "data/logs.csv"
+DATA_DIR: str = "data/"
+LOGS_PATH: str = DATA_DIR + "logs.csv"
 OUTPUT_DIR: str = "output/"
 FILTERED_LOGS: str = "filtered_logs"
 CSV: str = ".csv"
@@ -39,12 +40,12 @@ def main() -> None:
         print("Preparing logs ...")
         df: pd.DataFrame = filter_logs(pd.read_csv(LOGS_PATH, nrows=ROWS_NUMBER_TO_READ))
 
-        print("Saving processed data to files, number of records" + str(len(df.index)) + " ...")
-        save_df_to_csv_and_arff(df, FILTERED_LOGS, add_date=False)
+        print("Saving processed data to files, number of records: " + str(len(df.index)) + " ...")
+        save_df_to_csv_and_arff(df, FILTERED_LOGS, DATA_DIR, add_date=False)
 
     if is_grouping_active:
         print("Preparing sessions and users ...")
-        df: pd.DataFrame = pd.read_csv(OUTPUT_DIR + FILTERED_LOGS + CSV)
+        df: pd.DataFrame = pd.read_csv(DATA_DIR + FILTERED_LOGS + CSV)
         (
             extracted_users, extracted_sessions, user_pages,
             sessions_pages, sessions_numeric
@@ -62,7 +63,7 @@ def main() -> None:
             ]
         )
         for data_frame, label in zipped_data:
-            save_df_to_csv_and_arff(data_frame, label)
+            save_df_to_csv_and_arff(data_frame, label, OUTPUT_DIR)
 
     display_finish()
 
@@ -159,10 +160,11 @@ def prepare_popular_sites_with_flag(popular_sites: pd.DataFrame) -> Dict[str, bo
     return {site: False for site in popular_sites["url"]}
 
 
-def save_df_to_csv_and_arff(df: pd.DataFrame, collection_name: str, add_date: bool = True) -> None:
-    df.to_csv(OUTPUT_DIR + get_filename(collection_name, CSV, add_date), index=False)
+def save_df_to_csv_and_arff(df: pd.DataFrame, collection_name: str,
+                            output_dir: str, add_date: bool = True) -> None:
+    df.to_csv(output_dir + get_filename(collection_name, CSV, add_date), index=False)
     arff.dump(
-        OUTPUT_DIR + get_filename(collection_name, ARFF, add_date), df.values,
+        output_dir + get_filename(collection_name, ARFF, add_date), df.values,
         relation=collection_name, names=df.columns
     )
 
