@@ -7,6 +7,7 @@ from typing import Dict, List, Tuple
 
 import arff
 import pandas as pd
+from nameof import nameof
 from tqdm import tqdm
 
 """
@@ -43,9 +44,13 @@ def main() -> None:
     if is_grouping_active:
         print("Preparing sessions and users ...")
         df: pd.DataFrame = pd.read_csv(OUTPUT_DIR + FILTERED_LOGS + CSV)
-        extract_data(df)
+        extracted_users, extracted_sessions = extract_data(df)
         print("Saving processed data to files ...")
-        for data_frame, label in zip([], []):
+        zipped_data = zip(
+            [extracted_users, extracted_sessions],
+            [nameof(extracted_users), nameof(extracted_sessions)]
+        )
+        for data_frame, label in zipped_data:
             save_df_to_csv_and_arff(data_frame, label)
 
     display_finish()
@@ -60,7 +65,7 @@ def filter_logs(df: pd.DataFrame) -> pd.DataFrame:
         ]
 
 
-def extract_data(df: pd.DataFrame) -> Tuple[List, List]:
+def extract_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     extracted_sessions: List[Dict[str, str]] = []
     extracted_users: List[Dict[str, str]] = []
 
@@ -70,7 +75,7 @@ def extract_data(df: pd.DataFrame) -> Tuple[List, List]:
         (df["url"].value_counts(normalize=True) * 100)
             .rename("percent")
             .reset_index()
-            .rename({'index': 'url'}, axis=1)
+            .rename({"index": "url"}, axis=1)
     )
 
     popular_sites: pd.DataFrame = sites_percents[sites_percents["percent"] > POPULAR_SITE_PERCENT]
@@ -90,6 +95,14 @@ def extract_data(df: pd.DataFrame) -> Tuple[List, List]:
                 if session_requests_count > 1:
                     session_duration = (session_end - session_start)
                     average_request_duration = session_duration / (session_requests_count - 1)
+                    extracted_sessions.append(
+                        {**{
+                            "duration": session_duration,
+                            "requests_count": session_requests_count,
+                            "average_request_duration": average_request_duration
+                        },
+                         **session_visited_sites}
+                    )
 
                 session_start = request["time"]
                 session_visited_sites = get_popular_sites_with_flag(popular_sites)
@@ -103,7 +116,14 @@ def extract_data(df: pd.DataFrame) -> Tuple[List, List]:
             user_requests_count += 1
             session_end = request["time"]
 
-    return extracted_users, extracted_sessions
+        extracted_users.append(
+            {**{
+                "requests_count": user_requests_count
+            },
+             **session_visited_sites}
+        )
+
+    return pd.DataFrame(extracted_users), pd.DataFrame(extracted_sessions)
 
 
 def get_popular_sites_with_flag(popular_sites: pd.DataFrame) -> Dict[str, bool]:
