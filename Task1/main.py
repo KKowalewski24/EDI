@@ -3,7 +3,7 @@ import subprocess
 import sys
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import arff
 import pandas as pd
@@ -38,17 +38,28 @@ def main() -> None:
     if is_filtering_active:
         print("Preparing logs ...")
         df: pd.DataFrame = filter_logs(pd.read_csv(LOGS_PATH, nrows=ROWS_NUMBER_TO_READ))
+
         print("Saving processed data to files, number of records" + str(len(df.index)) + " ...")
         save_df_to_csv_and_arff(df, FILTERED_LOGS, add_date=False)
 
     if is_grouping_active:
         print("Preparing sessions and users ...")
         df: pd.DataFrame = pd.read_csv(OUTPUT_DIR + FILTERED_LOGS + CSV)
-        extracted_users, extracted_sessions = extract_data(df)
+        (
+            extracted_users, extracted_sessions, user_pages,
+            sessions_pages, sessions_numeric
+        ) = extract_data(df)
+
         print("Saving processed data to files ...")
         zipped_data = zip(
-            [extracted_users, extracted_sessions],
-            [nameof(extracted_users), nameof(extracted_sessions)]
+            [
+                extracted_users, extracted_sessions, user_pages,
+                sessions_pages, sessions_numeric
+            ],
+            [
+                nameof(extracted_users), nameof(extracted_sessions), nameof(user_pages),
+                nameof(sessions_pages), nameof(sessions_numeric)
+            ]
         )
         for data_frame, label in zipped_data:
             save_df_to_csv_and_arff(data_frame, label)
@@ -65,28 +76,21 @@ def filter_logs(df: pd.DataFrame) -> pd.DataFrame:
         ]
 
 
-def extract_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    extracted_sessions: List[Dict[str, str]] = []
-    extracted_users: List[Dict[str, str]] = []
+def extract_data(df: pd.DataFrame) -> \
+        Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    extracted_sessions: List[Dict[str, Any]] = []
+    extracted_users: List[Dict[str, Any]] = []
 
     unique_users: pd.Series = df["host"].unique()
-
-    sites_percents: pd.DataFrame = (
-        (df["url"].value_counts(normalize=True) * 100)
-            .rename("percent")
-            .reset_index()
-            .rename({"index": "url"}, axis=1)
-    )
-
-    popular_sites: pd.DataFrame = sites_percents[sites_percents["percent"] > POPULAR_SITE_PERCENT]
+    popular_sites: pd.DataFrame = get_popular_sites(df)
 
     for user in tqdm(unique_users):
         requests: pd.DataFrame = df[df["host"] == user]
 
         session_start = int(requests.iloc[0]["time"])
         session_end = session_start
-        session_visited_sites: Dict[str, bool] = get_popular_sites_with_flag(popular_sites)
-        user_visited_sites: Dict[str, bool] = get_popular_sites_with_flag(popular_sites)
+        session_visited_sites: Dict[str, bool] = prepare_popular_sites_with_flag(popular_sites)
+        user_visited_sites: Dict[str, bool] = prepare_popular_sites_with_flag(popular_sites)
         session_requests_count: int = 0
         user_requests_count: int = 0
 
@@ -105,7 +109,7 @@ def extract_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
                     )
 
                 session_start = request["time"]
-                session_visited_sites = get_popular_sites_with_flag(popular_sites)
+                session_visited_sites = prepare_popular_sites_with_flag(popular_sites)
                 session_requests_count = 0
 
             if request["url"] in session_visited_sites:
@@ -123,10 +127,31 @@ def extract_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
              **session_visited_sites}
         )
 
-    return pd.DataFrame(extracted_users), pd.DataFrame(extracted_sessions)
+    return modify_extracted_data(pd.DataFrame(extracted_users), pd.DataFrame(extracted_sessions))
 
 
-def get_popular_sites_with_flag(popular_sites: pd.DataFrame) -> Dict[str, bool]:
+def modify_extracted_data(extracted_users: pd.DataFrame, extracted_sessions: pd.DataFrame) -> \
+        Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    session_additional_cols: List[str] = ["duration", "requests_count", "average_request_duration"]
+
+    user_pages: pd.DataFrame = extracted_users.drop(columns=["requests_count"])
+    sessions_pages: pd.DataFrame = extracted_sessions.drop(columns=session_additional_cols)
+    sessions_numeric: pd.DataFrame = extracted_sessions[session_additional_cols]
+
+    return extracted_users, extracted_sessions, user_pages, sessions_pages, sessions_numeric
+
+
+def get_popular_sites(df: pd.DataFrame) -> pd.DataFrame:
+    sites_percents: pd.DataFrame = (
+        (df["url"].value_counts(normalize=True) * 100)
+            .rename("percent")
+            .reset_index()
+            .rename({"index": "url"}, axis=1)
+    )
+    return sites_percents[sites_percents["percent"] > POPULAR_SITE_PERCENT]
+
+
+def prepare_popular_sites_with_flag(popular_sites: pd.DataFrame) -> Dict[str, bool]:
     return {site: False for site in popular_sites["url"]}
 
 
