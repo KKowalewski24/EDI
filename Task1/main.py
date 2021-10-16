@@ -47,19 +47,19 @@ def main() -> None:
         print("Preparing sessions and users ...")
         df: pd.DataFrame = pd.read_csv(DATA_DIR + FILTERED_LOGS + CSV)
         (
-            extracted_users, extracted_sessions, user_pages,
-            sessions_pages, sessions_numeric
+            extracted_users, extracted_sessions, extracted_user_pages,
+            extracted_sessions_pages, extracted_sessions_numeric
         ) = extract_data(df)
 
         print("Saving processed data to files ...")
         zipped_data = zip(
             [
-                extracted_users, extracted_sessions, user_pages,
-                sessions_pages, sessions_numeric
+                extracted_users, extracted_sessions, extracted_user_pages,
+                extracted_sessions_pages, extracted_sessions_numeric
             ],
             [
-                nameof(extracted_users), nameof(extracted_sessions), nameof(user_pages),
-                nameof(sessions_pages), nameof(sessions_numeric)
+                nameof(extracted_users), nameof(extracted_sessions), nameof(extracted_user_pages),
+                nameof(extracted_sessions_pages), nameof(extracted_sessions_numeric)
             ]
         )
         for data_frame, label in zipped_data:
@@ -135,15 +135,23 @@ def modify_extracted_data(extracted_users: pd.DataFrame, extracted_sessions: pd.
         Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     session_additional_cols: List[str] = ["duration", "requests_count", "average_request_duration"]
 
-    user_pages: pd.DataFrame = extracted_users.drop(columns=["requests_count"]).astype(object)
-    sessions_pages: pd.DataFrame = (
+    extracted_user_pages: pd.DataFrame = (
+        extracted_users
+            .drop(columns=["requests_count"])
+            .astype(object)
+    )
+    extracted_sessions_pages: pd.DataFrame = (
         extracted_sessions
             .drop(columns=session_additional_cols)
             .astype(object)
     )
-    sessions_numeric: pd.DataFrame = extracted_sessions[session_additional_cols].astype(object)
+    extracted_sessions_numeric: pd.DataFrame = (
+        extracted_sessions[session_additional_cols]
+            .astype(object)
+    )
 
-    return extracted_users, extracted_sessions, user_pages, sessions_pages, sessions_numeric
+    return (extracted_users, extracted_sessions, extracted_user_pages,
+            extracted_sessions_pages, extracted_sessions_numeric)
 
 
 def get_popular_sites(df: pd.DataFrame) -> pd.DataFrame:
