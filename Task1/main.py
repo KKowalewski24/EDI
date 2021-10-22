@@ -26,7 +26,7 @@ ARFF: str = ".arff"
 SECONDS_IN_MINUTE: int = 60
 FIXED_SESSION_DURATION: int = 10 * SECONDS_IN_MINUTE
 POPULAR_SITE_PERCENT: float = 0.5
-ROWS_NUMBER_TO_READ: int = 50000
+ROWS_NUMBER_TO_READ: int = 200000
 
 
 # MAIN ----------------------------------------------------------------------- #
