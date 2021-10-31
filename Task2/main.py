@@ -15,10 +15,11 @@ import pandas as pd
 """
 
 # VAR ------------------------------------------------------------------------ #
-UTF_8 = "utf-8"
-OUTPUT_DIR = "output/"
-CSV = ".csv"
-ARFF = ".arff"
+UTF_8: str = "utf-8"
+OUTPUT_DIR: str = "output/"
+CSV: str = ".csv"
+ARFF: str = ".arff"
+TXT: str = ".txt"
 
 
 # MAIN ----------------------------------------------------------------------- #
@@ -43,7 +44,7 @@ def convert_html_to_plain(filename: str) -> None:
     with open(filename) as file:
         plain_text = html2text.html2text(file.read())
 
-    with open(get_filename_from_path(filename), "w", encoding=UTF_8) as file:
+    with open(get_filename_from_path(filename) + TXT, "w", encoding=UTF_8) as file:
         file.write(plain_text)
 
 
