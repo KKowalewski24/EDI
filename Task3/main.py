@@ -1,18 +1,45 @@
+import os
 import subprocess
 import sys
+from argparse import ArgumentParser, Namespace
+from datetime import datetime
 
 """
+    How to run:
+    
 """
-
 
 # VAR ------------------------------------------------------------------------ #
+OUTPUT_DIR: str = "output/"
+
 
 # MAIN ----------------------------------------------------------------------- #
 def main() -> None:
+    args = prepare_args()
+    filepath = args.filepath
+
     display_finish()
 
 
 # DEF ------------------------------------------------------------------------ #
+def get_filename_from_path(filepath: str) -> str:
+    return os.path.splitext(os.path.basename(filepath))[0]
+
+
+def prepare_filename(name: str, extension: str, add_date: bool = True) -> str:
+    return (name + ("-" + datetime.now().strftime("%H%M%S") if add_date else "")
+            + extension).replace(" ", "")
+
+
+def prepare_args() -> Namespace:
+    arg_parser = ArgumentParser()
+
+    arg_parser.add_argument(
+        "-f", "--filepath", required=True, type=str, help="Clusters filepath"
+    )
+
+    return arg_parser.parse_args()
+
 
 # UTIL ----------------------------------------------------------------------- #
 def check_types_check_style() -> None:
