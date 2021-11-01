@@ -43,18 +43,18 @@ def main() -> None:
 
 
 # DEF ------------------------------------------------------------------------ #
-def convert_html_to_plain(filename: str) -> None:
-    with open(filename) as file:
+def convert_html_to_plain(filepath: str) -> None:
+    with open(filepath) as file:
         plain_text = html2text.html2text(file.read())
 
-    with open(get_filename_from_path(filename) + TXT, "w", encoding=UTF_8) as file:
+    with open(OUTPUT_DIR + get_filename_from_path(filepath) + TXT, "w", encoding=UTF_8) as file:
         file.write(plain_text)
 
 
-def convert_plain_text_to_arff(filename: str) -> None:
+def convert_plain_text_to_arff(filepath: str) -> None:
     data: List[Tuple[str, str]] = []
 
-    with open(filename, encoding=UTF_8) as file:
+    with open(filepath, encoding=UTF_8) as file:
         txt_data = file.read()
         matches = list(re.finditer(PATTERN, txt_data))
         matches.reverse()
@@ -66,7 +66,7 @@ def convert_plain_text_to_arff(filename: str) -> None:
 
     save_df_to_csv_and_arff(
         pd.DataFrame(data, columns=["title", "content"]),
-        get_filename_from_path(filename), False
+        get_filename_from_path(filepath), False
     )
 
 
