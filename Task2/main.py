@@ -10,8 +10,8 @@ import pandas as pd
 
 """
     How to run:
-        python main.py --plain -f data/abc.html
-        python main.py --arff -f data/abc.txt -p "Page "
+        python main.py -f data/abc.html --plain
+        python main.py -f data/abc.txt --arff -p "Page "
 """
 
 # VAR ------------------------------------------------------------------------ #
@@ -25,16 +25,15 @@ TXT: str = ".txt"
 # MAIN ----------------------------------------------------------------------- #
 def main() -> None:
     args = prepare_args()
+    filepath = args.filepath
     to_plain = args.plain
     to_arff = args.arff
-    filename = args.filename
     phrase = args.phrase
 
     if to_plain:
-        convert_html_to_plain(filename)
-
-    if to_arff:
-        convert_plain_text_to_arff(filename, phrase)
+        convert_html_to_plain(filepath)
+    elif to_arff:
+        convert_plain_text_to_arff(filepath, phrase)
 
     display_finish()
 
@@ -49,7 +48,7 @@ def convert_html_to_plain(filename: str) -> None:
 
 
 def convert_plain_text_to_arff(filename: str, phrase: str) -> None:
-    df = pd.DataFrame(columns=['title', 'data'])
+    df = pd.DataFrame(columns=["title", "content"])
 
     with open(filename, encoding=UTF_8) as file:
         # TODO FINISH CONVERTER
@@ -58,16 +57,16 @@ def convert_plain_text_to_arff(filename: str, phrase: str) -> None:
     save_df_to_csv_and_arff(df, get_filename_from_path(filename), False)
 
 
-def save_df_to_csv_and_arff(df: pd.DataFrame, collection_name: str, add_date: bool = True) -> None:
-    df.to_csv(OUTPUT_DIR + prepare_filename(collection_name, CSV, add_date), index=False)
+def save_df_to_csv_and_arff(df: pd.DataFrame, filename: str, add_date: bool = True) -> None:
+    df.to_csv(OUTPUT_DIR + prepare_filename(filename, CSV, add_date), index=False)
     arff.dump(
-        OUTPUT_DIR + prepare_filename(collection_name, ARFF, add_date), df.values,
-        relation=collection_name, names=df.columns
+        OUTPUT_DIR + prepare_filename(filename, ARFF, add_date), df.values,
+        relation=filename, names=df.columns
     )
 
 
-def get_filename_from_path(filename: str) -> str:
-    return os.path.splitext(os.path.basename(filename))[0]
+def get_filename_from_path(filepath: str) -> str:
+    return os.path.splitext(os.path.basename(filepath))[0]
 
 
 def prepare_filename(name: str, extension: str, add_date: bool = True) -> str:
@@ -79,13 +78,13 @@ def prepare_args() -> Namespace:
     arg_parser = ArgumentParser()
 
     arg_parser.add_argument(
+        "-f", "--filepath", required=True, type=str, help="HTML or plain text filepath"
+    )
+    arg_parser.add_argument(
         "--plain", default=False, action="store_true", help="Convert HTML to plain text"
     )
     arg_parser.add_argument(
         "--arff", default=False, action="store_true", help="Convert plain text to arff"
-    )
-    arg_parser.add_argument(
-        "-f", "--filename", required=True, type=str, help="HTML or plain text filename"
     )
     arg_parser.add_argument(
         "-p", "--phrase", type=str, help="Phrase to find page"
