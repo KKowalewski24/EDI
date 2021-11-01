@@ -1,8 +1,11 @@
 import os
+import re
+import string
 import subprocess
 import sys
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
+from typing import List, Tuple
 
 import arff
 import html2text
@@ -11,7 +14,7 @@ import pandas as pd
 """
     How to run:
         python main.py -f data/abc.html --plain
-        python main.py -f data/abc.txt --arff -p "Page "
+        python main.py -f data/abc.txt --arff
 """
 
 # VAR ------------------------------------------------------------------------ #
@@ -20,6 +23,8 @@ OUTPUT_DIR: str = "output/"
 CSV: str = ".csv"
 ARFF: str = ".arff"
 TXT: str = ".txt"
+PATTERN: str = "(.*)\s(Page \d+\n)"
+PUNCTUATION_CHARACTERS: str = string.punctuation + "\n" + "â€˘" + "Â»"
 
 
 # MAIN ----------------------------------------------------------------------- #
@@ -28,12 +33,11 @@ def main() -> None:
     filepath = args.filepath
     to_plain = args.plain
     to_arff = args.arff
-    phrase = args.phrase
 
     if to_plain:
         convert_html_to_plain(filepath)
     elif to_arff:
-        convert_plain_text_to_arff(filepath, phrase)
+        convert_plain_text_to_arff(filepath)
 
     display_finish()
 
@@ -47,14 +51,29 @@ def convert_html_to_plain(filename: str) -> None:
         file.write(plain_text)
 
 
-def convert_plain_text_to_arff(filename: str, phrase: str) -> None:
-    df = pd.DataFrame(columns=["title", "content"])
+def convert_plain_text_to_arff(filename: str) -> None:
+    data: List[Tuple[str, str]] = []
 
     with open(filename, encoding=UTF_8) as file:
-        # TODO FINISH CONVERTER
-        pass
+        txt_data = file.read()
+        matches = list(re.finditer(PATTERN, txt_data))
+        matches.reverse()
+        index = -1
 
-    save_df_to_csv_and_arff(df, get_filename_from_path(filename), False)
+        for match in matches:
+            data.append((match.group(1), clear_text(txt_data[match.end():index])))
+            index = match.start()
+
+    save_df_to_csv_and_arff(
+        pd.DataFrame(data, columns=["title", "content"]),
+        get_filename_from_path(filename), False
+    )
+
+
+def clear_text(text: str) -> str:
+    return " ".join(text.translate(
+        str.maketrans(PUNCTUATION_CHARACTERS, " " * len(PUNCTUATION_CHARACTERS))
+    ).lower().split())
 
 
 def save_df_to_csv_and_arff(df: pd.DataFrame, filename: str, add_date: bool = True) -> None:
