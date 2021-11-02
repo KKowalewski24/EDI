@@ -4,22 +4,26 @@ import subprocess
 import sys
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
-from typing import List
+from typing import List, Tuple
 
+import numpy as np
+import pandas as pd
 from sklearn.metrics import jaccard_score
 
 """
     How to run:
+        python main.py -f data/clusters4.csv
+        python main.py -f data/clusters4.csv -ru
     
 """
 
 # VAR ------------------------------------------------------------------------ #
 OUTPUT_DIR: str = "output/"
-# TODO TEST AND MAYBE CHANGE
+
 CONSTANT_USER: List[bool] = [
-    True, False, False, False, False, True, False, True, True, True, False, False, False,
-    False, True, True, False, False, True, False, False, True, True, False, False, False,
-    False, True, False, True
+    False, False, True, False, False, False, False, True, True, False, False, True, False, False,
+    True, False, True, True, True, False, True, True, False, True, True, True, True, False, True,
+    False, False, False, True, False, False, True
 ]
 
 
@@ -28,20 +32,39 @@ def main() -> None:
     args = prepare_args()
     filepath = args.filepath
     is_random_user = args.random_user
-    random_user_pages_number = args.random_user_pages_number
+
+    print("Loading data ...")
+    clusters, pages = load_clusters_and_pages(filepath)
 
     print("Preparing user ...")
-    user: List[bool] = get_user(is_random_user, random_user_pages_number)
+    user: List[bool] = get_user(is_random_user, len(pages))
 
     display_finish()
 
 
 # DEF ------------------------------------------------------------------------ #
+def load_clusters_and_pages(filepath: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    df = pd.read_csv(filepath, header=None, delim_whitespace=True)
+    clusters = df.iloc[:, 2:]
+    pages = df.iloc[:, 0]
+    return clusters, pages
+
+
 def get_user(is_random_user: bool, random_user_pages_number: int) -> List[bool]:
     if is_random_user:
         return [random.choice([True, False]) for _ in range(random_user_pages_number)]
 
     return CONSTANT_USER
+
+
+def calculate_similarities(clusters: pd.DataFrame, user: List[bool]) -> Tuple[List[List], int]:
+    similarities: List[List] = [
+        [index, jaccard_score(user, clusters[clusters.columns[index].to_numpy()])]
+        for index, name in enumerate(clusters.columns)
+    ]
+    most_similar_cluster = np.argmax(similarities, axis=0)
+
+    return similarities, most_similar_cluster
 
 
 def get_filename_from_path(filepath: str) -> str:
@@ -61,10 +84,6 @@ def prepare_args() -> Namespace:
     )
     arg_parser.add_argument(
         "-ru", "--random_user", default=False, action="store_true", help="Generate random user"
-    )
-    arg_parser.add_argument(
-        "-pn", "--random_user_pages_number", type=int,
-        help="Number of pages for randomly generated user"
     )
 
     return arg_parser.parse_args()
