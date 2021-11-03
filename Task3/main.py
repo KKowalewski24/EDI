@@ -45,7 +45,7 @@ def main() -> None:
     user: List[bool] = get_user(is_random_user, len(pages))
 
     print("Calculating similarities ...")
-    similarities, most_similar_cluster = calculate_similarities(clusters, user)
+    similarities, most_similar_cluster_index = calculate_similarities(clusters, user)
 
     display_finish()
 
@@ -67,12 +67,12 @@ def get_user(is_random_user: bool, random_user_pages_number: int) -> List[bool]:
 
 def calculate_similarities(clusters: pd.DataFrame, user: List[bool]) -> Tuple[List[List], int]:
     similarities: List[List] = [
-        [index, jaccard_score(user, clusters[clusters.columns[index]].to_numpy())]
+        [index, jaccard_score(user, clusters[name].to_numpy())]
         for index, name in enumerate(clusters.columns)
     ]
-    most_similar_cluster = np.argmax(similarities, axis=0)
+    most_similar_cluster_index = np.argmax(similarities, axis=0)[1]
 
-    return similarities, most_similar_cluster
+    return similarities, most_similar_cluster_index
 
 
 def get_filename_from_path(filepath: str) -> str:
