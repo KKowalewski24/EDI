@@ -52,11 +52,11 @@ def main() -> None:
 
     print("\nCalculated similarities:")
     for similarity in similarities:
-        print("Index: ", similarity[0], "Value: ", round(similarity[1], 8))
+        print("Index: ", similarity[0], "Value: ", round(similarity[1], 4))
 
     print(
         "Jaccard similarity coefficient value for most similar cluster:",
-        most_similar_cluster_coefficient_value, end="\n\n"
+        round(most_similar_cluster_coefficient_value, 4), end="\n\n"
     )
 
     print("Recommended pages:")
