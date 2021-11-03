@@ -33,7 +33,7 @@ def main() -> None:
     filepath = args.filepath
     is_random_user = args.random_user
 
-    print("Loading data ...")
+    print("Loading data ...", end="\n\n")
     clusters, pages = load_clusters_and_pages(filepath)
 
     if len(CONSTANT_USER) != len(pages) and not is_random_user:
@@ -41,11 +41,22 @@ def main() -> None:
               "otherwise program cannot work !!!")
         return
 
-    print("Preparing user ...")
+    print("Preparing user ...", end="\n\n")
     user: List[bool] = get_user(is_random_user, len(pages))
 
-    print("Calculating similarities ...")
-    similarities, most_similar_cluster_index = calculate_similarities(clusters, user)
+    print("Calculating similarities ...", end="\n\n")
+    (
+        similarities, most_similar_cluster_index, most_similar_cluster_value
+    ) = calculate_similarities(clusters, user)
+
+    print("Calculating similarities:")
+    for similarity in similarities:
+        print("Index: ", similarity[0], "Value: ", round(similarity[1], 6))
+
+    print(
+        "Jaccard similarity coefficient value for most similar cluster:",
+        most_similar_cluster_value
+    )
 
     display_finish()
 
@@ -65,14 +76,16 @@ def get_user(is_random_user: bool, random_user_pages_number: int) -> List[bool]:
     return CONSTANT_USER
 
 
-def calculate_similarities(clusters: pd.DataFrame, user: List[bool]) -> Tuple[List[List], int]:
+def calculate_similarities(clusters: pd.DataFrame, user: List[bool]) -> Tuple[List[List], int, float]:
     similarities: List[List] = [
         [index, jaccard_score(user, clusters[name].to_numpy())]
         for index, name in enumerate(clusters.columns)
     ]
-    most_similar_cluster_index = np.argmax(similarities, axis=0)[1]
 
-    return similarities, most_similar_cluster_index
+    most_similar_cluster_index = np.argmax(similarities, axis=0)[1]
+    most_similar_cluster_value = similarities[most_similar_cluster_index][1]
+
+    return similarities, most_similar_cluster_index, most_similar_cluster_value
 
 
 def get_filename_from_path(filepath: str) -> str:
