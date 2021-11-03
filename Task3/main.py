@@ -21,9 +21,9 @@ from sklearn.metrics import jaccard_score
 OUTPUT_DIR: str = "output/"
 
 CONSTANT_USER: List[bool] = [
-    False, False, True, False, False, False, False, True, False, False, False, True, False,
-    False, True, False, False, True, True, False, True, True, False, True, False, True, False,
-    False, False, False, False, False, True, False, False, True
+    False, False, False, False, False, False, True, False, True, True, False, False, True, True,
+    True, True, True, False, False, False, True, True, False, False, True, False, False, True,
+    True, False, False, False, False, True, True, False
 ]
 
 
