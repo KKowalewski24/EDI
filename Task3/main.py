@@ -33,7 +33,7 @@ def main() -> None:
     filepath = args.filepath
     is_random_user = args.random_user
 
-    print("Loading data ...", end="\n\n")
+    print("Loading data ...")
     clusters, pages = load_clusters_and_pages(filepath)
 
     if len(CONSTANT_USER) != len(pages) and not is_random_user:
@@ -41,22 +41,33 @@ def main() -> None:
               "otherwise program cannot work !!!")
         return
 
-    print("Preparing user ...", end="\n\n")
+    print("Preparing user ...")
     user: List[bool] = get_user(is_random_user, len(pages))
 
-    print("Calculating similarities ...", end="\n\n")
+    print("Calculating similarities ...")
     (
-        similarities, most_similar_cluster_index, most_similar_cluster_value
+        similarities, most_similar_cluster_index,
+        most_similar_cluster_coefficient_value
     ) = calculate_similarities(clusters, user)
 
-    print("Calculating similarities:")
+    print("\nCalculated similarities:")
     for similarity in similarities:
-        print("Index: ", similarity[0], "Value: ", round(similarity[1], 6))
+        print("Index: ", similarity[0], "Value: ", round(similarity[1], 8))
 
     print(
         "Jaccard similarity coefficient value for most similar cluster:",
-        most_similar_cluster_value
+        most_similar_cluster_coefficient_value, end="\n\n"
     )
+
+    print("Recommended pages:")
+    recommended_pages = get_recommended_pages(clusters, pages, user, most_similar_cluster_index)
+
+    if len(recommended_pages) == 0:
+        print("Lack of recommended pages, try again for different data!")
+        return
+
+    for recommended_page in recommended_pages:
+        print(recommended_page)
 
     display_finish()
 
@@ -83,9 +94,18 @@ def calculate_similarities(clusters: pd.DataFrame, user: List[bool]) -> Tuple[Li
     ]
 
     most_similar_cluster_index = np.argmax(similarities, axis=0)[1]
-    most_similar_cluster_value = similarities[most_similar_cluster_index][1]
+    most_similar_cluster_coefficient_value = similarities[most_similar_cluster_index][1]
 
-    return similarities, most_similar_cluster_index, most_similar_cluster_value
+    return similarities, most_similar_cluster_index, most_similar_cluster_coefficient_value
+
+
+def get_recommended_pages(clusters: pd.DataFrame, pages: pd.DataFrame,
+                          user: List[bool], most_similar_cluster_index: int) -> List[str]:
+    most_similar_flags = clusters[clusters.columns[most_similar_cluster_index]].to_numpy()
+    return [
+        pages.iloc[index] for index in range(len(user))
+        if not user[index] and most_similar_flags[index]
+    ]
 
 
 def get_filename_from_path(filepath: str) -> str:
