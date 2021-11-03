@@ -1,0 +1,6 @@
+pandas
+arff
+flake8
+pep8-naming
+mypy
+html2text
