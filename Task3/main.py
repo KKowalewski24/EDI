@@ -14,16 +14,16 @@ from sklearn.metrics import jaccard_score
     How to run:
         python main.py -f data/clusters4.csv
         python main.py -f data/clusters4.csv -ru
-    
+
 """
 
 # VAR ------------------------------------------------------------------------ #
 OUTPUT_DIR: str = "output/"
 
 CONSTANT_USER: List[bool] = [
-    False, False, True, False, False, False, False, True, False, False, False, True, False, False,
-    True, False, False, True, True, False, True, True, False, True, False, True, False, False, False,
-    False, False, False, True, False, False, True
+    False, False, True, False, False, False, False, True, False, False, False, True, False,
+    False, True, False, False, True, True, False, True, True, False, True, False, True, False,
+    False, False, False, False, False, True, False, False, True
 ]
 
 
@@ -87,7 +87,8 @@ def get_user(is_random_user: bool, random_user_pages_number: int) -> List[bool]:
     return CONSTANT_USER
 
 
-def calculate_similarities(clusters: pd.DataFrame, user: List[bool]) -> Tuple[List[List], int, float]:
+def calculate_similarities(clusters: pd.DataFrame,
+                           user: List[bool]) -> Tuple[List[List], int, float]:
     similarities: List[List] = [
         [index, jaccard_score(user, clusters[name].to_numpy())]
         for index, name in enumerate(clusters.columns)
