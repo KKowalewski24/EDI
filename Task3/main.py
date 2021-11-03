@@ -21,8 +21,8 @@ from sklearn.metrics import jaccard_score
 OUTPUT_DIR: str = "output/"
 
 CONSTANT_USER: List[bool] = [
-    False, False, True, False, False, False, False, True, True, False, False, True, False, False,
-    True, False, True, True, True, False, True, True, False, True, True, True, True, False, True,
+    False, False, True, False, False, False, False, True, False, False, False, True, False, False,
+    True, False, False, True, True, False, True, True, False, True, False, True, False, False, False,
     False, False, False, True, False, False, True
 ]
 
@@ -36,8 +36,16 @@ def main() -> None:
     print("Loading data ...")
     clusters, pages = load_clusters_and_pages(filepath)
 
+    if len(CONSTANT_USER) != len(pages) and not is_random_user:
+        print("Number of pages and visited pages by user must be equal, "
+              "otherwise program cannot work !!!")
+        return
+
     print("Preparing user ...")
     user: List[bool] = get_user(is_random_user, len(pages))
+
+    print("Calculating similarities ...")
+    similarities, most_similar_cluster = calculate_similarities(clusters, user)
 
     display_finish()
 
@@ -59,7 +67,7 @@ def get_user(is_random_user: bool, random_user_pages_number: int) -> List[bool]:
 
 def calculate_similarities(clusters: pd.DataFrame, user: List[bool]) -> Tuple[List[List], int]:
     similarities: List[List] = [
-        [index, jaccard_score(user, clusters[clusters.columns[index].to_numpy()])]
+        [index, jaccard_score(user, clusters[clusters.columns[index]].to_numpy())]
         for index, name in enumerate(clusters.columns)
     ]
     most_similar_cluster = np.argmax(similarities, axis=0)
