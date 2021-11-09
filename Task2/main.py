@@ -10,11 +10,12 @@ from typing import List, Tuple
 import arff
 import html2text
 import pandas as pd
+from tqdm import tqdm
 
 """
     How to run:
-        python main.py -f data/abc.html --plain
-        python main.py -f data/abc.txt --arff
+        python main.py -f data/ftims.html --plain
+        python main.py -f output/ftims.txt --arff
 """
 
 # VAR ------------------------------------------------------------------------ #
@@ -30,6 +31,7 @@ PUNCTUATION_CHARACTERS: str = string.punctuation + "\n" + "â€˘" + "Â»"
 # MAIN ----------------------------------------------------------------------- #
 def main() -> None:
     args = prepare_args()
+    create_directory(OUTPUT_DIR)
     filepath = args.filepath
     to_plain = args.plain
     to_arff = args.arff
@@ -60,7 +62,7 @@ def convert_plain_text_to_arff(filepath: str) -> None:
         matches.reverse()
         index = -1
 
-        for match in matches:
+        for match in tqdm(matches):
             data.append((match.group(1), clear_text(txt_data[match.end():index])))
             index = match.start()
 
@@ -91,6 +93,11 @@ def get_filename_from_path(filepath: str) -> str:
 def prepare_filename(name: str, extension: str, add_date: bool = True) -> str:
     return (name + ("-" + datetime.now().strftime("%H%M%S") if add_date else "")
             + extension).replace(" ", "")
+
+
+def create_directory(path: str) -> None:
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 
 def prepare_args() -> Namespace:
