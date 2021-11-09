@@ -1,9 +1,7 @@
-import os
 import random
 import subprocess
 import sys
 from argparse import ArgumentParser, Namespace
-from datetime import datetime
 from typing import List, Tuple
 
 import numpy as np
@@ -107,15 +105,6 @@ def get_recommended_pages(clusters: pd.DataFrame, pages: pd.DataFrame,
         pages.iloc[index] for index in range(len(user))
         if not user[index] and most_similar_flags[index]
     ]
-
-
-def get_filename_from_path(filepath: str) -> str:
-    return os.path.splitext(os.path.basename(filepath))[0]
-
-
-def prepare_filename(name: str, extension: str, add_date: bool = True) -> str:
-    return (name + ("-" + datetime.now().strftime("%H%M%S") if add_date else "")
-            + extension).replace(" ", "")
 
 
 def prepare_args() -> Namespace:

@@ -112,9 +112,6 @@ def prepare_args() -> Namespace:
     arg_parser.add_argument(
         "--arff", default=False, action="store_true", help="Convert plain text to arff"
     )
-    arg_parser.add_argument(
-        "-p", "--phrase", type=str, help="Phrase to find page"
-    )
 
     return arg_parser.parse_args()
 
