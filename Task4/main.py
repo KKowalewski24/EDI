@@ -4,6 +4,7 @@ from argparse import ArgumentParser, Namespace
 from module.AutoCoder import AutoCoder
 from module.ImagePreprocessor import ImagePreprocessor
 from module.StatisticsCalculator import StatisticsCalculator
+from module.constants import DATA_DIR, RESULTS_DIR
 from module.utils import create_directory, display_finish, run_main
 
 """
@@ -11,12 +12,7 @@ from module.utils import create_directory, display_finish, run_main
         python main.py -n 2 4 6 8 10 12 20 30 -i 10000 -lr 0.01 -pn 10000 -pw 8 -ti data/01.bmp data/03.bmp
 """
 
-# VAR ------------------------------------------------------------------------ #
-RESULTS_DIR = "results/"
-DATA_DIR = "data/"
 
-
-# MAIN ----------------------------------------------------------------------- #
 def main() -> None:
     args = prepare_args()
     neurons = args.neurons
@@ -35,14 +31,16 @@ def main() -> None:
     image_preprocessor: ImagePreprocessor = ImagePreprocessor(
         training_image_paths, test_image_paths, patterns_number, pattern_width
     )
-    image_preprocessor.preprocess_training_images()
+
+    training_images = image_preprocessor.preprocess_training_images()
+    test_images = image_preprocessor.preprocess_test_images()
+
     statistics_calculator: StatisticsCalculator = StatisticsCalculator()
     auto_coder: AutoCoder = AutoCoder()
 
     display_finish()
 
 
-# DEF ------------------------------------------------------------------------ #
 def prepare_args() -> Namespace:
     arg_parser = ArgumentParser()
 
