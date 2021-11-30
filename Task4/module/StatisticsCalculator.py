@@ -1,0 +1,2 @@
+class StatisticsCalculator:
+    pass

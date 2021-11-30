@@ -1,6 +1,10 @@
+import glob
 from argparse import ArgumentParser, Namespace
 
-from module.utils import display_finish, run_main, create_directory
+from module.AutoCoder import AutoCoder
+from module.ImagePreprocessor import ImagePreprocessor
+from module.StatisticsCalculator import StatisticsCalculator
+from module.utils import create_directory, display_finish, run_main
 
 """
     How to run:
@@ -9,6 +13,7 @@ from module.utils import display_finish, run_main, create_directory
 
 # VAR ------------------------------------------------------------------------ #
 RESULTS_DIR = "results/"
+DATA_DIR = "data/"
 
 
 # MAIN ----------------------------------------------------------------------- #
@@ -19,8 +24,20 @@ def main() -> None:
     learning_rate = args.learning_rate
     patterns_number = args.patterns_number
     pattern_width = args.pattern_width
-    training_images = args.training_images
+    training_image_paths = args.training_images
     create_directory(RESULTS_DIR)
+
+    test_image_paths = [
+        image_path for image_path in glob.glob(f"{DATA_DIR}*")
+        if image_path not in training_image_paths
+    ]
+
+    image_preprocessor: ImagePreprocessor = ImagePreprocessor(
+        training_image_paths, test_image_paths, patterns_number, pattern_width
+    )
+    image_preprocessor.preprocess_training_images()
+    statistics_calculator: StatisticsCalculator = StatisticsCalculator()
+    auto_coder: AutoCoder = AutoCoder()
 
     display_finish()
 
@@ -51,7 +68,7 @@ def prepare_args() -> Namespace:
     )
     arg_parser.add_argument(
         "-ti", "--training_images", type=str, nargs="+", required=True,
-        help="Paths to training images, rest of images from this directory is for testing!"
+        help=f"Paths to training images, rest of images are taken from {DATA_DIR} directory!"
     )
 
     return arg_parser.parse_args()
