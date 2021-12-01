@@ -16,16 +16,16 @@ class ImagePreprocessor:
         self.pattern_width = pattern_width
 
 
-    def preprocess_training_images(self) -> List:
-        data = []
+    def preprocess_training_images(self) -> List[float]:
+        data: List[float] = []
         for image_path in self.training_image_paths:
             data += self._prepare_random_patterns(self._read_and_rescale(image_path))
 
         return data
 
 
-    def preprocess_test_images(self) -> List:
-        data = []
+    def preprocess_test_images(self) -> List[List[float]]:
+        data: List[List[float]] = []
         for image_path in self.test_image_paths:
             data.append(self._prepare_all_patterns(self._read_and_rescale(image_path)))
 

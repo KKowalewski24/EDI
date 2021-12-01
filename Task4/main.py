@@ -24,7 +24,7 @@ def main() -> None:
     create_directory(RESULTS_DIR)
 
     test_image_paths = [
-        image_path for image_path in glob.glob(f"{DATA_DIR}*")
+        image_path for image_path in [path.replace("\\", "/") for path in glob.glob(f"{DATA_DIR}*")]
         if image_path not in training_image_paths
     ]
 
@@ -35,8 +35,12 @@ def main() -> None:
     training_images = image_preprocessor.preprocess_training_images()
     test_images = image_preprocessor.preprocess_test_images()
 
+    auto_coder: AutoCoder = AutoCoder(
+        training_images, test_images, neurons, iterations, learning_rate
+    )
+    auto_coder.compress_image()
+
     statistics_calculator: StatisticsCalculator = StatisticsCalculator()
-    auto_coder: AutoCoder = AutoCoder()
 
     display_finish()
 
