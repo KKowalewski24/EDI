@@ -21,7 +21,7 @@ class ImagePostprocessor:
             for pattern in self.compressed_image_array
         ]
 
-        global_rows = []
+        rows_array = []
         for i in range(patterns_in_row):
             rows = []
             for _ in range(self.pattern_width):
@@ -31,13 +31,19 @@ class ImagePostprocessor:
                 for k in range(self.pattern_width):
                     rows[k] += image_reshaped[i * patterns_in_row + j][k].tolist()
 
-            global_rows += rows
+            rows_array += rows
 
-        self.compressed_image = Image.fromarray(self._rescale_to_px(np.array(global_rows)))
+        self.compressed_image = Image.fromarray(self._rescale_to_px(np.array(rows_array)))
 
 
-    def save_image(self) -> None:
-        pass
+    def save_image(self, filepath: str) -> None:
+        self._convert_image_mode("L").save(filepath)
+
+
+    def _convert_image_mode(self, mode: str):
+        if self.compressed_image.mode != mode:
+            return self.compressed_image.convert(mode)
+        return self.compressed_image
 
 
     def _rescale_to_px(self, image_array: np.ndarray):

@@ -21,8 +21,12 @@ def main() -> None:
     learning_rate = args.learning_rate
     patterns_number = args.patterns_number
     pattern_width = args.pattern_width
-    training_image_paths = args.training_images
-    create_directory(RESULTS_DIR)
+    training_image_paths = [path.replace("\\", "/") for path in args.training_images]
+
+    training_images_name = "_".join([
+        path.replace(DATA_DIR, "").split(".", 1)[0]
+        for path in training_image_paths
+    ])
 
     test_image_paths = [
         image_path for image_path in [path.replace("\\", "/") for path in glob.glob(f"{DATA_DIR}*")]
@@ -37,6 +41,8 @@ def main() -> None:
     test_images_array = image_preprocessor.preprocess_test_images()
 
     for neurons in neurons_sequence:
+        create_directory(f"{RESULTS_DIR}{training_images_name}/{neurons}")
+
         mlp = MLPRegressor(
             hidden_layer_sizes=neurons, max_iter=iterations,
             learning_rate_init=learning_rate, solver='sgd',
@@ -45,12 +51,17 @@ def main() -> None:
         mlp.fit(training_images_array, training_images_array)
         compressed_images_array = [mlp.predict(test_image) for test_image in test_images_array]
 
-        for test_image, compressed_image in zip(test_images_array, compressed_images_array):
+        for test_image, compressed_image, test_path in zip(
+                test_images_array, compressed_images_array, test_image_paths
+        ):
             image_postprocessor: ImagePostprocessor = ImagePostprocessor(
                 compressed_image, pattern_width, IMAGE_WIDTH
             )
             image_postprocessor.convert_to_image()
-            image_postprocessor.save_image()
+            image_postprocessor.save_image(
+                f"{RESULTS_DIR}{training_images_name}/{neurons}"
+                f"/compressed_{test_path.replace(DATA_DIR, '')}"
+            )
 
     display_finish()
 
