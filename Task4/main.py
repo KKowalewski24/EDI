@@ -1,10 +1,11 @@
 import glob
 from argparse import ArgumentParser, Namespace
 
-from module.AutoCoder import AutoCoder
+from sklearn.neural_network import MLPRegressor
+
+from module.ImagePostprocessor import ImagePostprocessor
 from module.ImagePreprocessor import ImagePreprocessor
-from module.StatisticsCalculator import StatisticsCalculator
-from module.constants import DATA_DIR, RESULTS_DIR
+from module.constants import DATA_DIR, IMAGE_WIDTH, RESULTS_DIR
 from module.utils import create_directory, display_finish, run_main
 
 """
@@ -15,7 +16,7 @@ from module.utils import create_directory, display_finish, run_main
 
 def main() -> None:
     args = prepare_args()
-    neurons = args.neurons
+    neurons_sequence = args.neurons_sequence
     iterations = args.iterations
     learning_rate = args.learning_rate
     patterns_number = args.patterns_number
@@ -29,18 +30,27 @@ def main() -> None:
     ]
 
     image_preprocessor: ImagePreprocessor = ImagePreprocessor(
-        training_image_paths, test_image_paths, patterns_number, pattern_width
+        training_image_paths, test_image_paths, patterns_number, pattern_width, IMAGE_WIDTH
     )
 
-    training_images = image_preprocessor.preprocess_training_images()
-    test_images = image_preprocessor.preprocess_test_images()
+    training_images_array = image_preprocessor.preprocess_training_images()
+    test_images_array = image_preprocessor.preprocess_test_images()
 
-    auto_coder: AutoCoder = AutoCoder(
-        training_images, test_images, neurons, iterations, learning_rate
-    )
-    auto_coder.compress_image()
+    for neurons in neurons_sequence:
+        mlp = MLPRegressor(
+            hidden_layer_sizes=neurons, max_iter=iterations,
+            learning_rate_init=learning_rate, solver='sgd',
+            activation='identity', alpha=0, momentum=0
+        )
+        mlp.fit(training_images_array, training_images_array)
+        compressed_images_array = [mlp.predict(test_image) for test_image in test_images_array]
 
-    statistics_calculator: StatisticsCalculator = StatisticsCalculator()
+        for test_image, compressed_image in zip(test_images_array, compressed_images_array):
+            image_postprocessor: ImagePostprocessor = ImagePostprocessor(
+                compressed_image, pattern_width, IMAGE_WIDTH
+            )
+            image_postprocessor.convert_to_image()
+            image_postprocessor.save_image()
 
     display_finish()
 
@@ -49,8 +59,8 @@ def prepare_args() -> Namespace:
     arg_parser = ArgumentParser()
 
     arg_parser.add_argument(
-        "-n", "--neurons", type=int, nargs="+", required=True,
-        help="Number of neurons in hidden layers"
+        "-n", "--neurons_sequence", type=int, nargs="+", required=True,
+        help="List of number of neurons in hidden layers"
     )
     arg_parser.add_argument(
         "-i", "--iterations", type=int, required=True,
