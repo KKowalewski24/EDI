@@ -6,6 +6,10 @@ import numpy as np
 
 
 class StatisticsCalculator:
+    BITS_IN_BYTE = 8
+    BITS_TO_REMEMBER_HIDDEN_FACTOR = 12
+    BITS_TO_REMEMBER_WEIGHT = 8
+
 
     def __init__(self, pattern_width: int, image_width: int, test_image_names: List[str]) -> None:
         self.pattern_width = pattern_width
@@ -33,29 +37,27 @@ class StatisticsCalculator:
 
 
     def _calculate_compression_ratio(self, neurons: int):
-        BITS_IN_BYTE = 8
-        BITS_TO_REMEMBER_HIDDEN_FACTOR = 12
-        BITS_TO_REMEMBER_WEIGHT = 8
-        in_out_neurones = self.pattern_width * self.pattern_width
-        return (BITS_IN_BYTE * self.image_width * self.image_width) / \
-               (in_out_neurones * neurons * BITS_TO_REMEMBER_WEIGHT +
-                neurons * BITS_TO_REMEMBER_HIDDEN_FACTOR +
-                neurons * in_out_neurones * BITS_TO_REMEMBER_WEIGHT)
+        input_output_neurones = self.pattern_width * self.pattern_width
+        value = (
+                input_output_neurones * neurons * StatisticsCalculator.BITS_TO_REMEMBER_WEIGHT +
+                neurons * StatisticsCalculator.BITS_TO_REMEMBER_HIDDEN_FACTOR +
+                neurons * input_output_neurones * StatisticsCalculator.BITS_TO_REMEMBER_WEIGHT
+        )
+        return (StatisticsCalculator.BITS_IN_BYTE * self.image_width * self.image_width) / value
 
 
     def _calculate_psnr(self, test_image_array: List[float], compressed_image_array: np.ndarray):
-        orginal_image = np.array(test_image_array).ravel()
-        reduced_image = np.array(compressed_image_array).ravel()
+        test_image_ravelled = np.array(test_image_array).ravel()
+        compressed_image_ravelled = np.array(compressed_image_array).ravel()
 
-        if len(orginal_image) != len(reduced_image):
-            raise ValueError(f'Orginal image ({len(orginal_image)}) \
-                differs in size from reduced image ({len(reduced_image)})')
+        if len(test_image_ravelled) != len(compressed_image_ravelled):
+            raise Exception("Images must have equal size!")
 
-        img_sum = 0
-        for i in range(len(orginal_image)):
-            img_sum += math.pow((orginal_image[i] - reduced_image[i]) * 255, 2)
+        image_sum = 0
+        for test_image, compressed_image in zip(test_image_ravelled, compressed_image_ravelled):
+            image_sum += math.pow((test_image - compressed_image) * 255, 2)
 
-        return 10 * math.log10((255 * 255) / (img_sum / (512 * 512)))
+        return 10 * math.log10((255 * 255) / (image_sum / (self.image_width * self.image_width)))
 
 
     def _set_descriptions(self, title: str, x_label: str = "", y_label: str = "") -> None:
