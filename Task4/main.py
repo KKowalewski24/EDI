@@ -69,7 +69,7 @@ def main() -> None:
             )
             image_postprocessor.convert_to_image()
             image_postprocessor.save_image(
-                f"{results_path}{neurons}/compressed_{test_image_name}"
+                f"{results_path}{neurons}/compressed_{test_image_name.split('.', 1)[0]}"
             )
 
             statistics_calculator.calculate_stats(

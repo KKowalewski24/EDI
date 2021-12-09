@@ -3,6 +3,9 @@ from PIL import Image
 
 
 class ImagePostprocessor:
+    BMP = ".bmp"
+    PNG = ".png"
+
 
     def __init__(self, compressed_image_array: np.ndarray,
                  pattern_width: int, image_width: int) -> None:
@@ -35,7 +38,8 @@ class ImagePostprocessor:
 
 
     def save_image(self, filepath: str) -> None:
-        self._convert_image_mode("L").save(filepath)
+        self._convert_image_mode("L").save(filepath + ImagePostprocessor.BMP)
+        self._convert_image_mode("L").save(filepath + ImagePostprocessor.PNG)
 
 
     def _convert_image_mode(self, mode: str):
