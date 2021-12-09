@@ -1,0 +1,8 @@
+matplotlib
+tqdm
+sklearn
+numpy
+Pillow
+flake8
+pep8-naming
+mypy
