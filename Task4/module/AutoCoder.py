@@ -2,6 +2,7 @@ from typing import List
 
 import numpy as np
 from sklearn.neural_network import MLPRegressor
+from tqdm import tqdm
 
 
 class AutoCoder:
@@ -23,4 +24,4 @@ class AutoCoder:
         )
 
         mlp.fit(self.training_images_array, self.training_images_array)
-        return [mlp.predict(test_image) for test_image in self.test_images_array]
+        return [mlp.predict(test_image) for test_image in tqdm(self.test_images_array)]
