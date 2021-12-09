@@ -1,5 +1,6 @@
 import glob
 from argparse import ArgumentParser, Namespace
+from datetime import datetime
 
 from module.AutoCoder import AutoCoder
 from module.ImagePostprocessor import ImagePostprocessor
@@ -28,54 +29,55 @@ def main() -> None:
     pattern_width = args.pattern_width
     training_image_paths = [path.replace("\\", "/") for path in args.training_images]
 
-    training_images_name = "_".join([
-        path.replace(DATA_DIR, "").split(".", 1)[0]
-        for path in training_image_paths
-    ])
-
     test_image_paths = [
         image_path for image_path in [path.replace("\\", "/") for path in glob.glob(f"{DATA_DIR}*")]
         if image_path not in training_image_paths
     ]
 
-    print("Image preprocessing...")
+    training_images_name = "_".join([
+        path.replace(DATA_DIR, "").split(".", 1)[0]
+        for path in training_image_paths
+    ])
+
+    test_image_names = [path.replace(DATA_DIR, "") for path in test_image_paths]
+
+    print("Image preprocessing ...")
     image_preprocessor: ImagePreprocessor = ImagePreprocessor(
         training_image_paths, test_image_paths, patterns_number, pattern_width, IMAGE_WIDTH
     )
     training_images_array = image_preprocessor.preprocess_training_images()
     test_images_array = image_preprocessor.preprocess_test_images()
 
+    results_path = f"{RESULTS_DIR}{training_images_name}_{datetime.now().strftime('%H%M%S')}/"
     statistics_calculator: StatisticsCalculator = StatisticsCalculator(
-        pattern_width, IMAGE_WIDTH
+        pattern_width, IMAGE_WIDTH, test_image_names
     )
 
     for neurons in neurons_sequence:
-        create_directory(f"{RESULTS_DIR}{training_images_name}/{neurons}")
+        create_directory(f"{results_path}{neurons}")
 
-        print(f"Compressing images for {neurons} neurons")
+        print(f"Compressing images for {neurons} neurons ...")
         auto_coder: AutoCoder = AutoCoder(
             training_images_array, test_images_array, neurons, iterations, learning_rate
         )
         compressed_images_array = auto_coder.compress_images()
 
-        for test_image, compressed_image, test_path in zip(
-                test_images_array, compressed_images_array, test_image_paths
-        ):
+        zipped_arrays = zip(test_images_array, compressed_images_array, test_image_names)
+        for test_image, compressed_image, test_image_name in zipped_arrays:
             image_postprocessor: ImagePostprocessor = ImagePostprocessor(
                 compressed_image, pattern_width, IMAGE_WIDTH
             )
             image_postprocessor.convert_to_image()
             image_postprocessor.save_image(
-                f"{RESULTS_DIR}{training_images_name}/{neurons}"
-                f"/compressed_{test_path.replace(DATA_DIR, '')}"
+                f"{results_path}{neurons}/compressed_{test_image_name}"
             )
 
             statistics_calculator.calculate_stats(
-                test_image, compressed_image, neurons, test_path.replace(DATA_DIR, "")
+                test_image, compressed_image, neurons, test_image_name
             )
 
     statistics_calculator.plot_statistics(
-        training_images_name, f"{RESULTS_DIR}stats_{training_images_name}"
+        training_images_name, f"{results_path}stats_{training_images_name}"
     )
 
     display_finish()
