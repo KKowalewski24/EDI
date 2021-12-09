@@ -1,8 +1,7 @@
 import glob
 from argparse import ArgumentParser, Namespace
 
-from sklearn.neural_network import MLPRegressor
-
+from module.AutoCoder import AutoCoder
 from module.ImagePostprocessor import ImagePostprocessor
 from module.ImagePreprocessor import ImagePreprocessor
 from module.constants import DATA_DIR, IMAGE_WIDTH, RESULTS_DIR
@@ -43,13 +42,10 @@ def main() -> None:
     for neurons in neurons_sequence:
         create_directory(f"{RESULTS_DIR}{training_images_name}/{neurons}")
 
-        mlp = MLPRegressor(
-            hidden_layer_sizes=neurons, max_iter=iterations,
-            learning_rate_init=learning_rate, solver='sgd',
-            activation='identity', alpha=0, momentum=0
+        auto_coder: AutoCoder = AutoCoder(
+            training_images_array, test_images_array, neurons, iterations, learning_rate
         )
-        mlp.fit(training_images_array, training_images_array)
-        compressed_images_array = [mlp.predict(test_image) for test_image in test_images_array]
+        compressed_images_array = auto_coder.compress_images()
 
         for test_image, compressed_image, test_path in zip(
                 test_images_array, compressed_images_array, test_image_paths

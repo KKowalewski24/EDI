@@ -1,12 +1,10 @@
-from typing import List
-
 import numpy as np
 from PIL import Image
 
 
 class ImagePostprocessor:
 
-    def __init__(self, compressed_image_array: List[np.ndarray],
+    def __init__(self, compressed_image_array: np.ndarray,
                  pattern_width: int, image_width: int) -> None:
         self.compressed_image_array = compressed_image_array
         self.pattern_width = pattern_width
