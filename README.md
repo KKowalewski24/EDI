@@ -19,5 +19,3 @@ Choose concatenate with params shown [here](https://www.cs.cmu.edu/~rcm/websphin
 and run, after few seconds html will be generated.
 
 In order to generate all required data execute `./run.sh`
-
-### Task 3
