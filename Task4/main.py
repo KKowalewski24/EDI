@@ -4,6 +4,7 @@ from argparse import ArgumentParser, Namespace
 from module.AutoCoder import AutoCoder
 from module.ImagePostprocessor import ImagePostprocessor
 from module.ImagePreprocessor import ImagePreprocessor
+from module.StatisticsCalculator import StatisticsCalculator
 from module.utils import create_directory, display_finish, run_main
 
 """
@@ -44,6 +45,10 @@ def main() -> None:
     training_images_array = image_preprocessor.preprocess_training_images()
     test_images_array = image_preprocessor.preprocess_test_images()
 
+    statistics_calculator: StatisticsCalculator = StatisticsCalculator(
+        pattern_width, IMAGE_WIDTH
+    )
+
     for neurons in neurons_sequence:
         create_directory(f"{RESULTS_DIR}{training_images_name}/{neurons}")
 
@@ -64,6 +69,14 @@ def main() -> None:
                 f"{RESULTS_DIR}{training_images_name}/{neurons}"
                 f"/compressed_{test_path.replace(DATA_DIR, '')}"
             )
+
+            statistics_calculator.calculate_stats(
+                test_image, compressed_image, neurons, test_path.replace(DATA_DIR, "")
+            )
+
+    statistics_calculator.plot_statistics(
+        training_images_name, f"{RESULTS_DIR}stats_{training_images_name}"
+    )
 
     display_finish()
 
